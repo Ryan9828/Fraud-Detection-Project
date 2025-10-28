@@ -12,13 +12,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy code AND artifacts into the image
+# Copy code and artifacts into the image
 COPY service_raw.py ./service_raw.py
 COPY artifacts_fraud_detec/ ./artifacts_fraud_detec/
 
-# (If you have other modules/files they must be copied too)
-# COPY utils.py ./utils.py
-# COPY some_config.json ./some_config.json
 
 ENV ART_DIR=artifacts_fraud_detec \
     PORT=8000 \
