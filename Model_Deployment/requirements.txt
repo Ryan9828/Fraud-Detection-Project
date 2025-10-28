@@ -1,0 +1,19 @@
+#tensorflow==2.16.1          # or tensorflow==2.16.1 or 2.20.0
+#keras==3.11.3               # match exactly what your model used
+#fastapi==0.115.5
+#uvicorn[standard]==0.30.6
+#pydantic==2.9.2
+#numpy==1.26.4
+#pandas==2.2.2
+#scikit-learn==1.5.2
+#joblib==1.4.2
+
+tensorflow== 2.20.0
+keras== 3.11.3
+fastapi== 0.119.0
+uvicorn== 0.37.0
+pydantic== 2.10.3
+numpy== 2.1.3
+pandas== 2.2.3
+scikit-learn== 1.6.1
+joblib== 1.4.2
