@@ -1,0 +1,14 @@
+{
+  "id_col": "cc_num",
+  "time_col": "trans_date_trans_time",
+  "timesteps": 32,
+  "stride": 2,
+  "n_features": 17,
+  "features_in_order": [
+    "amt",
+    "trans_hour",
+    "time_since_last",
+    "last_amt",
+    "category"
+  ]
+}

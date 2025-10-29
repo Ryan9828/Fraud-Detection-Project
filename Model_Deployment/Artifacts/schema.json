@@ -1,0 +1,16 @@
+{
+  "features_in_order": [
+    "amt",
+    "trans_hour",
+    "time_since_last",
+    "last_amt",
+    "category"
+  ],
+  "dtypes": {
+    "amt": "float64",
+    "trans_hour": "int64",
+    "time_since_last": "float64",
+    "last_amt": "float64",
+    "category": "string"
+  }
+}
