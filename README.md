@@ -116,7 +116,8 @@ http://<EC2-IP>/docs
 Swagger UI provides interactive testing for /predict and /health endpoints, allowing real-time validation of model outputs .
 
 # Local Testing
-
+Note: The public AWS endpoint is only live when the EC2 instance is running.
+For local testing, start the FastAPI app with uvicorn service_raw:app --reload
 You can test predictions without AWS using:
 
 uvicorn service_raw:app --reload
