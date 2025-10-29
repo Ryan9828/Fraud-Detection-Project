@@ -24,14 +24,19 @@ Model interpretability via engineered temporal features:
 amt, trans_hour, time_since_last, last_amt, category
 
 # Technical Stack
-Component	Technology
-Model	TensorFlow 2.20 / Keras 3.11 (LSTM network)
-Framework	FastAPI 0.119
-Preprocessing	scikit-learn 1.6 + joblib
-Containerisation	Docker
-Cloud Deployment	AWS EC2 (Amazon Linux 2023)
-Programming Language	Python 3.12
-Package Management	pip
+Model:	TensorFlow 2.20 / Keras 3.11 (LSTM network)
+
+Framework:	FastAPI 0.119
+
+Preprocessing:	scikit-learn 1.6 + joblib
+
+Containerisation:	Docker
+
+Cloud Deployment:	AWS EC2 (Amazon Linux 2023)
+
+Programming Language:	Python 3.12
+
+Package Management:	pip
 
 
 # Deployment Workflow
