@@ -50,7 +50,7 @@ Fraud Detection Report
 
 Financial cost considered for both merchants & banks
 
-Optimal threshold t★ = 0.011 minimised expected loss to $ 0.17 per transaction 
+Optimal threshold t = 0.011 minimised expected loss to $ 0.17 per transaction 
 
 Fraud Detection Report
 
@@ -80,7 +80,7 @@ SSH → transfer project → docker build → docker run -d -p 80:8000 fastapi-d
 Health check:
 
 curl http://<EC2-IP>/health
-# → {"status":"ok","timesteps":32,"n_features":17,"threshold":0.011}
+ → {"status":"ok","timesteps":32,"n_features":17,"threshold":0.011}
 
 ## 5. API Usage
 Example Request (JSON)
