@@ -8,13 +8,6 @@ The trained model was then containerized with Docker and deployed on an AWS EC2 
 This end-to-end workflow demonstrates not only technical modeling ability but also the ability to operationalize machine learning models in a real-world environment.
 Fraud Detection with LSTM — End-to-End AWS Deployment
 
-# Overview
-
-This project demonstrates a full machine learning operations (MLOps) workflow for detecting fraudulent transactions in real time.
-The final model, an LSTM (Long Short-Term Memory) network, was trained to recognise temporal spending patterns and deployed as a FastAPI REST API on AWS EC2 using Docker.
-
-It provides a scalable, cloud-hosted fraud detection service capable of ingesting raw transaction data and returning fraud probabilities and binary decisions in real time.
-
 # Key Features
 
 Deep learning architecture (LSTM) trained on 1.8 M+ transactions
