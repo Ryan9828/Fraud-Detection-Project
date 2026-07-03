@@ -1,94 +1,135 @@
-# Fraud-Detection-Project
-This project builds and deploys a real-time credit card fraud detection system using machine learning and FastAPI. The goal is to identify potentially fraudulent transactions based on behavioral and transactional features such as amount, time since last transaction, and merchant category.
+# Credit Card Fraud Detection — LSTM + FastAPI on AWS
 
-A Random Forest model (with threshold optimization for imbalanced data) was trained and evaluated on labeled transaction data, achieving strong performance across key metrics including precision, recall, and ROC-AUC.
+End-to-end fraud detection system: from exploratory analysis and model benchmarking on **1.85M credit card transactions**, to a **sequence-based LSTM model**, a **cost-optimised decision threshold**, and a **containerised real-time API deployed on AWS EC2**.
 
-The trained model was then containerized with Docker and deployed on an AWS EC2 instance using a FastAPI service (service_raw.py). The API exposes two main endpoints — /predict for fraud inference and /health for server status — enabling scalable, production-style inference.
+**Final model (LSTM, hold-out test set):**
 
-This end-to-end workflow demonstrates not only technical modeling ability but also the ability to operationalize machine learning models in a real-world environment.
-Fraud Detection with LSTM — End-to-End AWS Deployment
+| Metric | Score |
+|---|---|
+| ROC-AUC | 0.9993 |
+| PR-AUC | 0.9865 |
+| Precision (F1-optimal threshold, t = 0.28) | 0.98 |
+| Recall (F1-optimal threshold, t = 0.28) | 0.95 |
+| Recall (cost-optimal threshold, t = 0.011) | 0.975 |
 
-# Key Features
+---
 
-Deep learning architecture (LSTM) trained on 1.8 M+ transactions
+## Repository Structure
 
-Real-time fraud detection API using FastAPI
+```
+├── NoteBooks/
+│   ├── Logistic_models.ipynb          # Baseline logistic regression + LASSO feature selection
+│   ├── Xg_Boost_models.ipynb          # Tuned XGBoost (TimeSeriesSplit CV) + leakage audit
+│   ├── Deep_models.ipynb              # Feed-forward NN + LSTM sequence model
+│   └── Estimating_Business_Cost.ipynb # Cost-based threshold optimisation + sensitivity analysis
+├── Model_Deployment/
+│   ├── Fraud_analysis.ipynb           # EDA and feature engineering
+│   ├── service_raw.py                 # FastAPI inference service
+│   ├── Dockerfile                     # Container build
+│   ├── requirements.txt               # Pinned dependencies
+│   ├── AWS_Deployment_Report.pdf      # Deployment write-up
+│   └── Artifacts/                     # Trained model + preprocessing artifacts
+│       ├── lstm_fraud_model.keras
+│       ├── preprocessor.joblib        # Fitted scaler + one-hot encoder
+│       ├── schema.json                # Raw input feature schema
+│       ├── windowing.json             # Sequence window config (T=32, F=17)
+│       ├── threshold.json             # Cost-optimal decision threshold
+│       └── model_card.json            # Model metadata
+└── Fraud Detection Report.pdf         # Full modelling report
+```
 
-Containerised with Docker for reproducibility and portability
+## Dataset
 
-Deployed on AWS EC2 (Amazon Linux 2023, t3.micro)
+[Kaggle — Simulated Credit Card Transactions](https://www.kaggle.com/datasets/kartik2112/fraud-detection) (`fraudTrain.csv` + `fraudTest.csv`, combined for a custom time-based split): **1,852,385 transactions**, of which ~0.5% are fraudulent.
 
-Business-driven threshold tuning — optimised for financial cost, not just statistical accuracy
+## Feature Engineering
 
-Model interpretability via engineered temporal features:
-amt, trans_hour, time_since_last, last_amt, category
+EDA revealed that fraud commonly appears as **burst behaviour** — a small "test" payment followed shortly by a large transaction on the same card. Two engineered features capture this:
 
-# Technical Stack
-Model:	TensorFlow 2.20 / Keras 3.11 (LSTM network)
+- `time_since_last` — seconds since the card's previous transaction
+- `last_amt` — the card's previous transaction amount
 
-Framework:	FastAPI 0.119
+Final feature set: `amt`, `trans_hour`, `time_since_last`, `last_amt`, `category` (one-hot encoded → 17 model features). A dedicated leakage audit in `Xg_Boost_models.ipynb` recomputes both engineered features from past-only information and verifies zero look-ahead mismatches.
 
-Preprocessing:	scikit-learn 1.6 + joblib
+## Modelling Progression
 
-Containerisation:	Docker
+All models are evaluated on a chronologically held-out test set (fraud is a time-series problem — random shuffling would leak future behaviour into training).
 
-Cloud Deployment:	AWS EC2 (Amazon Linux 2023)
+| Model | PR-AUC | Precision / Recall (best threshold) | Notes |
+|---|---|---|---|
+| Logistic regression (baseline) | — | 0.02 / 0.76 | Class-weighted; establishes floor |
+| + engineered features | — | 0.06 / 0.86 | Big lift from `time_since_last`, `last_amt` |
+| LASSO (L1) feature selection | — | — | 128/765 features retained; confirms category + engineered features dominate |
+| Feed-forward NN | 0.89 | 0.86 / 0.82 | Class-weighted loss, random-search tuning |
+| XGBoost (TimeSeriesSplit CV) | 0.94 | 0.93 / 0.84 | scale_pos_weight for imbalance |
+| **LSTM (32-step card sequences)** | **0.99** | **0.98 / 0.95** | Models per-card temporal behaviour |
 
-Programming Language:	Python 3.12
+The LSTM operates on **windows of the last 32 transactions per card** (zero-padded with masking when a card has fewer), letting it learn sequential fraud signatures the tabular models cannot see.
 
-Package Management:	pip
+## Cost-Based Threshold Optimisation
 
+Statistical metrics treat false positives and false negatives as equal — in fraud they are not. `Estimating_Business_Cost.ipynb` builds a financial cost model:
 
-# Deployment Workflow
+- **False negative cost** — mean fraud amount (~$531) × a secondary-cost multiplier (chargebacks, fees, operational handling), sensitivity-tested from 2× to 4×
+- **False positive cost** — median lost sale (~$47) + service/support cost ($5–10) + estimated lost future revenue from churned customers (30–45% churn rate, per Riskified research)
 
-## 1. Model Training & Evaluation
+The decision threshold is selected on the **validation set** to minimise expected cost, then evaluated on test. Because missed fraud costs an order of magnitude more than a blocked legitimate sale, the cost-optimal threshold sits far below the F1-optimal one (t\* ≈ 0.011 vs 0.28). At the deployed threshold the model catches **97.5% of fraud** (625/641 test cases) with only 94 false positives across 136,737 test transactions.
 
-Dataset: Kaggle Fraud Detection
+## Deployment
 
-Engineered temporal features such as time_since_last and last_amt
+### Architecture
 
-Final LSTM achieved F1 = 0.97, Precision = 0.98, Recall = 0.95 at threshold t = 0.28 
+```
+Raw transactions (JSON) → FastAPI → saved preprocessor → 32×17 window → LSTM → probability + decision
+```
 
-Fraud Detection Report
+The service (`service_raw.py`) accepts **raw transactions**, applies the exact fitted preprocessor from training, builds the per-card sequence window server-side, and returns a fraud probability plus a decision at the cost-optimal threshold. All artifacts load once at startup.
 
-## 2. Cost-Based Threshold Optimisation
+### Stack
 
-Financial cost considered for both merchants & banks
+| Layer | Technology |
+|---|---|
+| Model | TensorFlow 2.20 / Keras 3.11 |
+| API | FastAPI 0.119 + Uvicorn |
+| Preprocessing | scikit-learn 1.6 (persisted with joblib) |
+| Container | Docker (python-slim base, healthcheck included) |
+| Cloud | AWS EC2 — Amazon Linux 2023, t3.micro, Sydney region |
 
-Optimal threshold t = 0.011 minimised expected loss to $ 0.17 per transaction 
+### Run Locally
 
-Fraud Detection Report
+```bash
+cd Model_Deployment
+pip install -r requirements.txt
+uvicorn service_raw:app --reload
+# Swagger UI: http://127.0.0.1:8000/docs
+```
 
-## 3. Containerisation
+Or with Docker:
 
-FastAPI service wrapped in a Docker image
+```bash
+cd Model_Deployment
+docker build -t fraud-lstm-api .
+docker run -d -p 8000:8000 fraud-lstm-api
+curl http://127.0.0.1:8000/health
+```
 
-Dependencies pinned for reproducibility:
+### API
 
-tensorflow==2.20.0
-keras==3.11.3
-fastapi==0.119.0
-uvicorn==0.37.0
-scikit-learn==1.6.1
-numpy==2.1.3
-pandas==2.2.3
-joblib==1.4.2
+`GET /health`
 
-## 4. AWS EC2 Deployment
+```json
+{
+  "status": "ok",
+  "timesteps": 32,
+  "n_features_encoded": 17,
+  "threshold": 0.011,
+  "raw_features": ["amt", "trans_hour", "time_since_last", "last_amt", "category"]
+}
+```
 
-Instance: t3.micro ( Sydney region )
+`POST /predict` — send one or more recent transactions for a **single card** (the service builds the sequence window from them):
 
-Ports 80 (HTTP) and 22 (SSH) enabled
-
-SSH → transfer project → docker build → docker run -d -p 80:8000 fastapi-demo
-
-Health check:
-
-curl http://<EC2-IP>/health
- → {"status":"ok","timesteps":32,"n_features":17,"threshold":0.011}
-
-## 5. API Usage
-Example Request (JSON)
+```json
 {
   "transactions": [
     {
@@ -102,67 +143,34 @@ Example Request (JSON)
     }
   ]
 }
+```
 
-Example Response
+Response:
+
+```json
 {
-  "id": "6011477612335392",
+  "cc_num": "6011477612335392",
+  "n_transactions": 1,
   "proba_fraud": 0.0047,
   "decision": 0,
-  "threshold": 0.011
+  "threshold": 0.011,
+  "window_shape": "(32, 17)"
 }
+```
 
-## 6. Swagger UI
+> The public EC2 endpoint is only live while the instance is running; use the local instructions above to test.
 
-Access at:
+## Limitations & Future Work
 
-http://<EC2-IP>/docs
+- The simulated dataset is cleaner than production card data; real-world performance would be lower.
+- Sequence windows require per-card history — cold-start cards fall back to zero-padded windows, where the model has less signal.
+- Cost parameters (churn rate, secondary costs) are research-based estimates; the sensitivity grid bounds but does not eliminate that uncertainty.
+- Next steps: model monitoring/drift detection, batch scoring endpoint, CI/CD for retraining, authentication on the API.
 
+## References
 
-Swagger UI provides interactive testing for /predict and /health endpoints, allowing real-time validation of model outputs .
-
-# Local Testing
-Note: The public AWS endpoint is only live when the EC2 instance is running.
-For local testing, start the FastAPI app with uvicorn service_raw:app --reload
-You can test predictions without AWS using:
-
-uvicorn service_raw:app --reload
-
-
-Then open http://127.0.0.1:8000/docs
-
-Or run:
-
-python test_api.py
-
-# Results Summary
-Metric	Score
-Precision	0.98
-Recall	0.95
-F1 Score	0.97
-ROC-AUC	0.9993
-PR-AUC	0.9865
-Optimal Threshold (t★)	0.011
-Avg Cost per Tx	$ 0.17
-☁️ Screenshots (Portfolio Evidence)
-
-# Conclusion
-
-This project delivers a complete end-to-end MLOps workflow for fraud detection:
-
-From data analysis and temporal feature engineering
-
-To deep learning model development, cost-based optimisation, and cloud deployment
-
-It demonstrates how to bridge data science, software engineering, and business context to build production-ready AI systems that are both accurate and financially effective.
-
-# References
-
-Ali et al. (2022). Financial Fraud Detection Based on Machine Learning: A Systematic Literature Review. Applied Sciences, 12(19), 9637.
-
-LexisNexis Risk Solutions (2024). True Cost of Fraud Study.
-
-J.P. Morgan (2023). False Positives & Fraud Prevention Tools.
-
-Riskified (2025). How Much Does a False Decline Cost Your Business?
-
-Australian Bureau of Statistics (2025). Personal Fraud, 2023-24 Financial Year.
+- Ali et al. (2022). *Financial Fraud Detection Based on Machine Learning: A Systematic Literature Review.* Applied Sciences, 12(19), 9637.
+- LexisNexis Risk Solutions (2024). *True Cost of Fraud Study.*
+- J.P. Morgan (2023). *False Positives & Fraud Prevention Tools.*
+- Riskified (2025). *How Much Does a False Decline Cost Your Business?*
+- Australian Bureau of Statistics (2025). *Personal Fraud, 2023–24 Financial Year.*
