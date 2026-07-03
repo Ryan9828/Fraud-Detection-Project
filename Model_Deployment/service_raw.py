@@ -13,7 +13,7 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
-import json, os
+import json, os, logging
 from datetime import datetime
 
 # Config & artifact paths
@@ -212,9 +212,11 @@ def predict(body: PredictBody):
             "window_shape": f"({T}, {F})"
         }
     
-    except Exception as e:
-        import traceback
-        raise HTTPException(status_code=400, detail=f"{str(e)}\n{traceback.format_exc()}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logging.exception("Prediction failed")
+        raise HTTPException(status_code=500, detail="Internal error during prediction")
 
 if __name__ == "__main__":
     import uvicorn

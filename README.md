@@ -53,7 +53,7 @@ Final feature set: `amt`, `trans_hour`, `time_since_last`, `last_amt`, `category
 
 ## Modelling Progression
 
-All models are evaluated on a chronologically held-out test set (fraud is a time-series problem — random shuffling would leak future behaviour into training).
+All models are evaluated on held-out test data — a chronological split for the tabular models (random shuffling would leak future behaviour into training), and a grouped-by-card split for the LSTM (each card's transaction history stays within one split).
 
 | Model | PR-AUC | Precision / Recall (best threshold) | Notes |
 |---|---|---|---|
