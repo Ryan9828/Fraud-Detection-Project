@@ -40,7 +40,7 @@ End-to-end fraud detection system: from exploratory analysis and model benchmark
 
 ## Dataset
 
-[Kaggle — Simulated Credit Card Transactions](https://www.kaggle.com/datasets/kartik2112/fraud-detection) (`fraudTrain.csv` + `fraudTest.csv`, combined for a custom time-based split): **1,852,385 transactions**, of which ~0.5% are fraudulent.
+[Kaggle — Simulated Credit Card Transactions](https://www.kaggle.com/datasets/kartik2112/fraud-detection) (`fraudTrain.csv` + `fraudTest.csv`, combined for a custom time-based split): 1,852,394 rows combined, minus 9 records from a single synthetic location with a 100% fraud rate (dropped as a data artefact) — leaving **1,852,385 transactions**, of which ~0.5% are fraudulent.
 
 ## Feature Engineering
 
