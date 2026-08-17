@@ -30,5 +30,37 @@
     "threshold": 0.01100501253132832,
     "based_on": "min_expected_cost"
   },
-  "notes": "Trained with EarlyStopping on val_AUC; cost-tuned threshold on validation; evaluated on hold-out test."
+  "notes": "Trained with EarlyStopping on val_AUC; cost-tuned threshold on validation; evaluated on hold-out test. Metrics corrected to a per-transaction basis 2026-08-17 (see 'evaluation'); model, preprocessor and threshold unchanged.",
+  "evaluation": {
+    "basis": "per-transaction (corrected 2026-08-17); see NoteBooks/Honest_Evaluation.ipynb",
+    "test_set": {
+      "transactions": 277858,
+      "fraud": 1447,
+      "split": "by card (cc_num-sorted 70/15/15 positional)"
+    },
+    "threshold_free": {
+      "pr_auc": 0.9659,
+      "roc_auc": 0.9994
+    },
+    "at_f1_optimal_t_0.2792": {
+      "precision": 0.8054,
+      "recall": 0.9551,
+      "f1": 0.8739,
+      "tp": 1382,
+      "fp": 334,
+      "fn": 65
+    },
+    "at_deployed_t_0.011": {
+      "precision": 0.7054,
+      "recall": 0.9765,
+      "tp": 1413,
+      "fp": 590,
+      "fn": 34
+    },
+    "superseded_per_window_metrics": {
+      "note": "Earlier reported metrics (pr_auc 0.9865, precision 0.98 / recall 0.95 at t*=0.2792) were computed per stride-2 window over cards with >=32 test transactions, covering only 641 of 1447 test fraud cases; reproduced exactly, then corrected, in Honest_Evaluation.ipynb.",
+      "pr_auc": 0.9865,
+      "roc_auc": 0.9993
+    }
+  }
 }
